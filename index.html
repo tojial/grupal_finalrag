@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07120b">
+  <meta name="description" content="Ragnarok eSports Bolivia - comunidad, torneos, equipo y gaming.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <title>Ragnarok eSports - Plataforma Gaming</title>
+  
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <!-- jQuery 3.7.1 CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- DOMPurify -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========== VARIABLES GLOBALES ========== */
+    :root {
+      --green-main: #16a34a;
+      --green-dark: #052E16;
+      --green-bright: #22c55e;
+      --black-main: #080B09;
+      --black-sec: #111713;
+      --white: #FFFFFF;
+      --gray: #A3A3A3;
+      --card-bg: #111713;
+      --border: #1a2e1f;
+      --glow: rgba(22, 163, 74, 0.4);
+      --red: #dc2626;
+      --yellow: #ffcc00;
+      --magenta: #ff00aa;
+      --lime: #39ff14;
+      --sidebar-width: 280px;
+      --surface-glass: rgba(12,20,14,.88);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+      background: var(--black-main);
+      color: var(--white);
+      line-height: 1.6;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Orbitron', 'Segoe UI', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--black-main); }
+    ::-webkit-scrollbar-thumb { background: var(--green-main); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--green-bright); }
+
+    /* ========== BOTÓN HAMBURGUESA ========== */
+    .hamburger-btn {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1100;
+      background: var(--green-main);
+      border: none;
+      color: var(--white);
+      font-size: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(22, 163, 74, 0.5);
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn:hover { background: var(--green-bright); transform: scale(1.05); }
+
+    /* ========== OVERLAY ========== */
+    .overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7); z-index: 1000;
+      display: none; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .overlay.active { display: block; opacity: 1; }
+
+    /* ========== MENÚ LATERAL ========== */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
+      background: var(--black-sec); border-right: 2px solid var(--green-main);
+      z-index: 1050; display: flex; flex-direction: column;
+      transform: translateX(-100%); transition: transform 0.3s ease;
+      box-shadow: 4px 0 30px rgba(22, 163, 74, 0.2); overflow-y: auto;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-header {
+      padding: 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.8rem; flex-shrink: 0;
+    }
+    .sidebar-header img {
+      width: 46px; height: 46px; object-fit: contain; flex-shrink: 0;
+      border-radius: 10px; background: rgba(0,18,5,.35);
+      filter: drop-shadow(0 0 8px var(--green-main));
+    }
+    .sidebar-header .brand-text { display: flex; flex-direction: column; }
+    .sidebar-header .brand-text span:first-child {
+      font-family: 'Orbitron', sans-serif; font-size: 1.05rem;
+      font-weight: 900; color: var(--white); text-shadow: 0 0 15px var(--green-main); line-height: 1.2;
+    }
+    .sidebar-header .brand-text span:last-child {
+      font-size: 0.55rem; letter-spacing: 0.3em; color: var(--green-bright); font-weight: 400;
+    }
+    .sidebar-nav { flex: 1; padding: 0.8rem 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem;
+      border-radius: 10px; color: var(--gray); font-family: 'Rajdhani', sans-serif;
+      font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; transition: all 0.3s ease; border: 1px solid transparent;
+      background: transparent; width: 100%; text-align: left;
+    }
+    .nav-btn:hover { background: rgba(22, 163, 74, 0.1); color: var(--green-bright); border-color: rgba(22, 163, 74, 0.3); }
+    .nav-btn.active {
+      background: linear-gradient(90deg, rgba(22, 163, 74, 0.25), rgba(22, 163, 74, 0.05));
+      color: var(--green-bright); border-color: var(--green-main);
+      box-shadow: 0 0 15px rgba(22, 163, 74, 0.2); position: relative;
+    }
+    .nav-btn.active::before {
+      content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 3px;
+      background: var(--green-bright); border-radius: 0 3px 3px 0; box-shadow: 0 0 10px var(--green-bright);
+    }
+    .nav-icon { font-size: 1.15rem; width: 22px; text-align: center; }
+    .sidebar-footer {
+      padding: 1rem 1.2rem; border-top: 1px solid var(--border);
+      font-size: 0.7rem; color: var(--gray); text-align: center; line-height: 1.5; flex-shrink: 0;
+    }
+    .sidebar-footer .copyright { color: var(--green-main); font-weight: 700; }
+
+    /* ========== ÁREA PRINCIPAL ========== */
+    .main-panel {
+      flex: 1; height: 100vh; overflow-y: auto;
+      padding: 4.5rem 2rem 2rem 5rem; background: var(--black-main);
+      position: relative; scrollbar-width: thin; scrollbar-color: var(--green-main) var(--black-sec);
+      width: 100%; min-width: 0; overscroll-behavior: contain; scroll-behavior: smooth;
+    }
+    .main-panel::-webkit-scrollbar { width: 8px; }
+    .main-panel::-webkit-scrollbar-track { background: var(--black-sec); }
+    .main-panel::-webkit-scrollbar-thumb { background: var(--green-main); border-radius: 4px; }
+
+    /* ========== SECCIONES ========== */
+    .page-section { display: none; animation: fadeIn 0.4s ease; min-width: 0; }
+    .page-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ========== TÍTULOS ========== */
+    .section-title { margin-bottom: 2rem; text-align: center; position: relative; padding-top: 38px; }
+    .section-title::before {
+      content: ''; display: block; width: 34px; height: 34px; margin: 0 auto 8px;
+      background: url('imagenes/ragnarok-emblema.png') center/contain no-repeat;
+      filter: drop-shadow(0 0 5px var(--green-main));
+    }
+    .section-title h2 {
+      font-size: 1.8rem; color: var(--white); display: inline-block; position: relative;
+      text-shadow: 0 0 20px rgba(22, 163, 74, 0.5); overflow-wrap: anywhere;
+    }
+    .section-title h2::after {
+      content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 3px; background: linear-gradient(90deg, var(--green-main), var(--green-bright));
+      border-radius: 2px; box-shadow: 0 0 15px var(--green-main);
+    }
+    .section-title p {
+      color: var(--gray); margin-top: 1.2rem; font-size: 0.95rem;
+      max-width: 700px; margin-left: auto; margin-right: auto;
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      text-align: center; padding: 2.5rem 1.5rem;
+      background: radial-gradient(ellipse at center, rgba(22, 163, 74, 0.15) 0%, transparent 70%);
+      border-radius: 20px; margin-bottom: 2rem; transition: background .25s ease, border-color .25s ease, color .25s ease;
+    }
+    .hero-logo {
+      width: 112px; height: 112px; object-fit: contain; padding: 8px; border-radius: 24px;
+      background: rgba(0,18,5,.28); margin-bottom: 1rem;
+      filter: drop-shadow(0 0 14px var(--green-main));
+    }
+    .hero h1 {
+      font-size: 2.5rem; background: linear-gradient(135deg, var(--white) 0%, var(--green-bright) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 0.8rem;
+    }
+    .hero p { font-size: 1rem; color: var(--gray); max-width: 600px; margin: 0 auto 1.5rem; }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ========== BOTONES ========== */
+    .btn {
+      display: inline-block; padding: 0.7rem 1.8rem;
+      background: linear-gradient(135deg, var(--green-bright), var(--green-main));
+      color: #04130a !important; text-decoration: none; border-radius: 50px;
+      font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.1em; border: none; cursor: pointer;
+      transition: all 0.3s ease; position: relative; overflow: hidden;
+      box-shadow: 0 0 20px rgba(22, 163, 74, 0.4); touch-action: manipulation;
+    }
+    .btn::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    .btn:hover::before { left: 100%; }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 0 35px rgba(22, 163, 74, 0.7); }
+    .btn-sm { padding: 0.45rem 1.1rem; font-size: 0.65rem; }
+    .btn-danger { background: linear-gradient(135deg, var(--red), #991b1b); color: var(--white) !important; box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
+    .btn-danger:hover { box-shadow: 0 0 35px rgba(220, 38, 38, 0.7); }
+    .btn-outline { background: transparent; border: 2px solid var(--green-bright); color: var(--green-bright) !important; box-shadow: none; }
+    .btn-outline:hover { background: rgba(34, 197, 94, 0.1); box-shadow: 0 0 20px var(--glow); }
+
+    /* ========== GRIDS ========== */
+    .cards-grid { display: grid; gap: 1.5rem; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    /* ========== CARDS ========== */
+    .card, .product-card, .event-card, .stat-box, .contact-info-card, .form-container, .perfil-card {
+      border-radius: 14px; border: 1px solid var(--border);
+    }
+    .card {
+      background: var(--card-bg); padding: 1.2rem; text-align: center;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative; overflow: hidden; min-width: 0;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--green-main), transparent);
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .card:hover::before { opacity: 1; }
+    .card:hover { transform: translateY(-6px); border-color: var(--green-bright); box-shadow: 0 0 28px rgba(22, 163, 74,.25); }
+    .card img { width: 100%; aspect-ratio: 16 / 10; height: auto; object-fit: cover; border-radius: 12px; margin-bottom: 0.8rem; }
+    .card .card-icon { width: 60px; height: 60px; object-fit: contain; margin: 0 auto 0.6rem; }
+    .card h3 { font-size: 1rem; color: var(--white); margin-bottom: 0.3rem; }
+    .card .role { color: var(--green-bright); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+    .card .desc { color: var(--gray); font-size: 0.85rem; margin-bottom: 0.6rem; }
+    .card .price { font-size: 1.3rem; font-weight: 900; color: var(--green-bright); margin: 0.4rem 0; text-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+    .card .badge {
+      display: inline-block; background: var(--green-main); color: var(--white);
+      padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.6rem;
+      font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;
+    }
+    .card .badge-new { background: var(--green-bright); color: var(--black-main); }
+    .card .badge-featured { background: #ff6b00; }
+
+    /* ========== ESTADÍSTICAS ========== */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-box { background: var(--card-bg); padding: 1.2rem; text-align: center; transition: all 0.3s ease; }
+    .stat-box:hover { border-color: var(--green-main); box-shadow: 0 0 20px var(--glow); }
+    .stat-box .stat-number { font-family: 'Orbitron', monospace; font-size: 1.8rem; font-weight: 900; color: var(--green-bright); display: block; text-shadow: 0 0 15px rgba(34, 197, 94, 0.4); }
+    .stat-box .stat-label { font-size: 0.75rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* ========== FORMULARIOS ========== */
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.4rem; color: var(--gray); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.7rem 1rem; background: #07120b; border: 1px solid var(--border);
+      border-radius: 10px; color: var(--white); font-family: 'Rajdhani', sans-serif; font-size: 0.9rem;
+      transition: border-color 0.3s ease; min-height: 44px; touch-action: manipulation;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--green-bright); box-shadow: 0 0 0 3px rgba(22, 163, 74,.18);
+    }
+    .form-group input.error, .form-group select.error, .form-group textarea.error { border-color: var(--red); box-shadow: 0 0 10px rgba(220, 38, 38, 0.3); }
+    .form-group .error-msg { color: var(--red); font-size: 0.75rem; margin-top: 0.3rem; display: none; }
+    .form-group input.valid, .form-group select.valid { border-color: var(--green-bright); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .player-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.8rem; margin-bottom: 0.8rem;
+      padding: 0.8rem; background: rgba(22, 163, 74, 0.05); border: 1px solid var(--border);
+      border-radius: 8px; align-items: end;
+    }
+    .remove-player { background: var(--red); border: none; color: #fff; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.3s ease; }
+    .remove-player:hover { background: #991b1b; }
+
+    /* ========== FILTROS ========== */
+    .filters-bar {
+      display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+      padding: 1rem; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); align-items: center;
+    }
+    .filters-bar input, .filters-bar select {
+      padding: 0.5rem 1rem; background: var(--black-main); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--white); font-family: 'Rajdhani', sans-serif;
+      font-size: 0.85rem; flex: 1; min-width: 140px; max-width: 220px; transition: border-color 0.3s ease;
+    }
+    .filters-bar input:focus, .filters-bar select:focus { outline: none; border-color: var(--green-bright); box-shadow: 0 0 0 3px rgba(22, 163, 74,.18); }
+    .category-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1.5rem; }
+    .category-pill {
+      padding: 0.4rem 1rem; background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 30px; color: var(--gray); font-family: 'Rajdhani', sans-serif;
+      font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.3s ease;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .category-pill:hover, .category-pill.active { background: var(--green-main); color: var(--white); border-color: var(--green-main); box-shadow: 0 0 15px var(--glow); }
+
+    /* ========== TABLAS ========== */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 620px; }
+    thead { background: var(--green-main); }
+    thead th { padding: 0.7rem 0.8rem; text-align: left; color: var(--white); font-family: 'Orbitron', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.2s ease; }
+    tbody tr:hover { background: rgba(22, 163, 74, 0.1); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 0.6rem 0.8rem; color: var(--gray); }
+    tbody td:first-child { color: var(--white); font-weight: 600; }
+    .timestamp-cell { font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--green-bright); }
+
+    /* ========== RELOJ ========== */
+    .clock-panel { background: var(--card-bg); border: 2px solid var(--green-main); border-radius: 20px; padding: 1.8rem; text-align: center; box-shadow: 0 0 40px rgba(22, 163, 74, 0.2); margin-bottom: 1.8rem; }
+    .clock-panel .clock-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--green-bright); letter-spacing: 0.3em; margin-bottom: 0.6rem; }
+    .clock-panel .clock-time { font-family: 'Orbitron', monospace; font-size: 2.8rem; font-weight: 900; color: var(--white); text-shadow: 0 0 20px var(--green-main), 0 0 40px var(--glow); letter-spacing: 0.05em; line-height: 1; }
+    .clock-panel .clock-date { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; color: var(--gray); margin-top: 0.4rem; letter-spacing: 0.15em; }
+    .clock-panel .clock-timestamp { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: var(--gray); }
+    .clock-panel .clock-timestamp strong { color: var(--green-bright); font-family: 'Orbitron', monospace; }
+
+    /* ========== ESTADÍSTICAS EVENTOS ========== */
+    .events-stats { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 1rem; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); }
+    .stat-item { text-align: center; }
+    .stat-item .stat-value { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 900; color: var(--green-bright); display: block; }
+    .stat-item .stat-label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* ========== CONTROLES EVENTOS ========== */
+    .events-controls { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+    /* ========== DEMO JQUERY ========== */
+    .jquery-demo { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-top: 1.5rem; }
+    .jquery-demo h3 { color: var(--green-bright); font-size: 0.9rem; margin-bottom: 0.8rem; }
+    .demo-buttons { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .demo-box { margin-top: 0.8rem; padding: 0.8rem; background: rgba(22, 163, 74, 0.1); border: 1px dashed var(--green-main); border-radius: 8px; text-align: center; color: var(--gray); font-size: 0.85rem; transition: all 0.3s ease; }
+
+    /* ========== DETALLE PRODUCTO ========== */
+    .product-detail { display: none; margin-top: 0.8rem; padding: 1rem; background: rgba(22, 163, 74, 0.05); border: 1px solid var(--green-main); border-radius: 10px; text-align: left; }
+    .product-detail h4 { color: var(--green-bright); font-size: 0.8rem; margin-bottom: 0.6rem; }
+    .product-detail ul { list-style: none; }
+    .product-detail ul li { padding: 0.25rem 0; font-size: 0.8rem; color: var(--gray); display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .product-detail ul li:last-child { border-bottom: none; }
+    .product-detail ul li span { color: var(--white); font-weight: 600; }
+
+    /* ========== CONTACTO ========== */
+    .contact-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .contact-info-card { background: var(--card-bg); padding: 1.5rem; text-align: center; transition: all 0.3s ease; }
+    .contact-info-card:hover { border-color: var(--green-main); box-shadow: 0 0 20px var(--glow); }
+    .contact-info-card .contact-icon { font-size: 2rem; margin-bottom: 0.6rem; display: block; }
+    .contact-info-card h4 { color: var(--green-bright); font-size: 0.9rem; margin-bottom: 0.4rem; }
+    .contact-info-card p { color: var(--gray); font-size: 0.85rem; }
+    .social-links { display: flex; gap: 0.8rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
+    .social-links a { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; background: rgba(22, 163, 74, 0.1); border: 1px solid var(--green-main); border-radius: 50%; color: var(--green-main); text-decoration: none; font-size: 1.1rem; transition: all 0.3s ease; }
+    .social-links a:hover { background: var(--green-main); color: var(--white); box-shadow: 0 0 20px rgba(22, 163, 74, 0.5); transform: translateY(-3px) scale(1.1); }
+
+    /* ========== MENSAJES ========== */
+    .alert { padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; display: none; }
+    .alert-success { background: rgba(22, 163, 74, 0.15); border: 1px solid var(--green-main); color: var(--green-bright); }
+    .alert-error { background: rgba(220, 38, 38, 0.15); border: 1px solid var(--red); color: #ff6666; }
+
+    /* ========== PREVIEW INSCRIPCIÓN ========== */
+    .preview-box { background: rgba(22, 163, 74, 0.05); border: 1px solid var(--green-main); border-radius: 12px; padding: 1.2rem; margin: 1rem 0; display: none; }
+    .preview-box h4 { color: var(--green-bright); margin-bottom: 0.8rem; font-size: 0.9rem; }
+    .preview-box p { color: var(--gray); font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .preview-box p strong { color: var(--white); }
+
+    /* ========== UTILIDADES Y TEMAS ========== */
+    .skip-link { position: fixed; left: 12px; top: 12px; z-index: 3000; transform: translateY(-180%); background: var(--green-bright); color: #06130a; padding: .65rem 1rem; border-radius: .6rem; font-weight: 800; text-decoration: none; }
+    .skip-link:focus { transform: translateY(0); }
+    img { max-width: 100%; height: auto; }
+    button, a, input, select, textarea { touch-action: manipulation; }
+    button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #84ff5b; outline-offset: 3px; }
+    .nav-btn[aria-current="page"] { outline: 1px solid var(--green-bright); outline-offset: -2px; }
+    .ragnarok-global-brand { position: fixed; top: 1rem; left: 4.75rem; z-index: 900; width: 46px; height: 46px; padding: 5px; border-radius: 12px; background: rgba(0,24,8,.78); border: 1px solid rgba(57,255,91,.35); box-shadow: 0 0 16px rgba(57,255,91,.18); backdrop-filter: blur(8px); pointer-events:none; }
+    .ragnarok-global-brand img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+    /* ========== BANNER SUPERIOR PERFIL USUARIO / ADMIN ========== */
+    .admin-top-banner { display: none; align-items: center; gap: 0.65rem; padding: 0.35rem 0.75rem; background: rgba(17, 23, 19, 0.94); border: 1px solid rgba(34, 197, 94, 0.55); border-radius: 12px; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), 0 0 14px rgba(34, 197, 94, 0.14); backdrop-filter: blur(12px); }
+    .admin-top-banner.visible { display: inline-flex; }
+    .admin-top-banner.is-admin { border-color: rgba(255, 204, 0, 0.55); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), 0 0 14px rgba(255, 204, 0, 0.14); }
+    .admin-top-banner__avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--green-bright); background: #07120b; flex-shrink: 0; }
+    .admin-top-banner.is-admin .admin-top-banner__avatar { border-color: var(--yellow); }
+    .admin-top-banner__info { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+    .admin-top-banner__name { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--white); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-top-banner__meta { font-size: 0.68rem; font-weight: 700; color: var(--green-bright); letter-spacing: 0.04em; }
+    .admin-top-banner.is-admin .admin-top-banner__meta { color: var(--yellow); }
+    .admin-top-banner__btn { border: 1px solid rgba(34, 197, 94, 0.45); background: rgba(34, 197, 94, 0.14); color: var(--green-bright); border-radius: 8px; padding: 0.25rem 0.5rem; font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .admin-top-banner__btn:hover { background: var(--green-bright); color: #080b09; }
+    .admin-top-banner.is-admin .admin-top-banner__btn { border-color: rgba(255, 204, 0, 0.45); background: rgba(255, 204, 0, 0.14); color: var(--yellow); }
+    .admin-top-banner.is-admin .admin-top-banner__btn:hover { background: var(--yellow); color: #080b09; }
+    body.theme-light .admin-top-banner { background: #f2fbf5; border-color: #16a34a; }
+    body.theme-light .admin-top-banner.is-admin { background: #fffdf2; border-color: #eab308; }
+    body.theme-light .admin-top-banner__name { color: #17211a; }
+    body.theme-light .admin-top-banner__meta { color: #15803d; }
+    body.theme-light .admin-top-banner.is-admin .admin-top-banner__meta { color: #a16207; }
+
+    @media (max-width: 768px) {
+      .utility-controls { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100vw - 6rem); }
+      .admin-top-banner__name { max-width: 95px; }
+    }
+    @media (max-width: 480px) {
+      .admin-top-banner__info { display: none; }
+      .admin-top-banner { padding: 0.25rem 0.45rem; gap: 0.4rem; }
+      .admin-top-banner__avatar { width: 28px; height: 28px; }
+    }
+
+    /* ========== BARRA SUPERIOR Y DESPLEGABLE DE CUENTA ========== */
+    .utility-controls { position: fixed; right: 1rem; top: 1rem; z-index: 1200; display: flex; gap: 0.75rem; align-items: center; }
+    .utility-btn { position: relative; flex-shrink: 0; min-height: 46px; min-width: 46px; border: 1px solid rgba(22, 163, 74, .5); border-radius: 12px; padding: .65rem .85rem; background: rgba(7, 18, 11, .92); color: #eaffea; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; backdrop-filter: blur(12px); box-shadow: 0 6px 22px rgba(0, 0, 0, .28); transition: transform .2s, background .2s, border-color .2s; font-family: 'Rajdhani', sans-serif; font-size: 0.88rem; }
+    .utility-btn:hover { transform: translateY(-2px); background: #16a34a; border-color: #22c55e; }
+    .account-menu-wrapper { position: relative; display: inline-flex; align-items: center; }
+    .account-btn { background: linear-gradient(135deg, rgba(22, 163, 74, .22), rgba(7, 18, 11, .95)); border-color: rgba(34, 197, 94, .65); font-weight: 700; }
+    .account-btn__caret { font-size: 0.72rem; opacity: 0.85; transition: transform 0.2s ease; }
+    .account-btn[aria-expanded="true"] .account-btn__caret { transform: rotate(180deg); }
+    .account-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      min-width: 225px;
+      background: rgba(11, 18, 13, 0.97);
+      border: 1px solid rgba(34, 197, 94, 0.55);
+      border-radius: 14px;
+      padding: 0.45rem;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 18px rgba(22, 163, 74, 0.2);
+      backdrop-filter: blur(14px);
+      z-index: 1300;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .account-dropdown.open { display: flex; animation: fadeIn 0.18s ease; }
+    .account-dropdown__header {
+      padding: 0.45rem 0.65rem 0.55rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.2rem;
+    }
+    .account-dropdown__title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem;
+      color: var(--white);
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .account-dropdown__sub {
+      font-size: 0.74rem;
+      color: var(--green-bright);
+      display: block;
+    }
+    .account-dropdown__item {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--white);
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+    .account-dropdown__item:hover {
+      background: rgba(22, 163, 74, 0.18);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: var(--green-bright);
+    }
+    .account-dropdown__item--danger { color: #ff7b7b; }
+    .account-dropdown__item--danger:hover {
+      background: rgba(220, 38, 38, 0.18);
+      border-color: rgba(220, 38, 38, 0.45);
+      color: #ff9c9c;
+    }
+    .utility-btn[hidden] { display: none !important; }
+    .install-btn { font-weight: 700; }
+
+    /* ========== TEMA CLARO ========== */
+    body.theme-light { color-scheme: light; --white: #17211a; --gray: #58665c; --black-main: #f2f6f3; --black-sec: #e6eee8; --card-bg: #ffffff; --border: #d3dfd6; --green-dark: #d9f5df; background: #f2f6f3; color: #17211a; }
+    body.theme-light .sidebar { background: #e8f2eb !important; color: #17211a; border-color: #cadccf; }
+    body.theme-light .sidebar-header, body.theme-light .sidebar-footer { color: #17211a; }
+    body.theme-light .nav-btn { color: #27382c; }
+    body.theme-light .nav-btn:hover, body.theme-light .nav-btn.active { background: #ccebd4 !important; color: #0b6128; }
+    body.theme-light .main-panel { background: #f2f6f3 !important; color: #17211a; }
+    body.theme-light .page-section, body.theme-light .card, body.theme-light .form-container, body.theme-light .product-card, body.theme-light .event-card, body.theme-light .stat-card, body.theme-light .perfil-card, body.theme-light .perfil-cabecera, body.theme-light .modal__caja { background: #fff !important; color: #17211a; border-color: #d3dfd6 !important; }
+    body.theme-light p, body.theme-light label, body.theme-light .muted, body.theme-light small { color: #46554a; }
+    body.theme-light input, body.theme-light textarea, body.theme-light select { background: #fff !important; color: #17211a !important; border-color: #c5d5ca !important; }
+    body.theme-light .utility-btn { background: #fff; color: #14532d; border-color: #9ec8a9; }
+    body.theme-light .account-btn { background: #e9f7ed; color: #14532d; border-color: #16a34a; }
+    body.theme-light .account-dropdown { background: #ffffff; border-color: #9ec8a9; }
+    body.theme-light .account-dropdown__item { color: #17211a; }
+    body.theme-light .account-dropdown__item:hover { background: #e9f7ed; color: #14532d; }
+    body.theme-light .hamburger-btn { box-shadow: 0 4px 18px rgba(22, 163, 74,.25); }
+    body.theme-light .section-title h2 { text-shadow: none; }
+    body.theme-light .hero h1 { -webkit-text-fill-color: initial; background: none; color: #155e2c; }
+    body.theme-light .table-responsive { background: var(--card-bg); }
+
+    /* ========== MODAL ========== */
+    body.modal-open { overflow: hidden; }
+    .modal { position: fixed; inset: 0; z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 1rem; background: rgba(7, 18, 11,.9); backdrop-filter: blur(5px); }
+    .modal__caja { position: relative; width: 100%; max-width: 440px; max-height: 92dvh; overflow-y: auto; background: var(--black-sec); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; box-shadow: 0 0 40px rgba(22, 163, 74,.15); }
+    .modal__cerrar { position: absolute; top: .6rem; right: .8rem; width: 40px; height: 40px; background: transparent; border: none; color: var(--gray); font-size: 1.7rem; cursor: pointer; }
+    .modal__cerrar:hover { color: var(--white); }
+    .modal__titulo { display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem; padding-bottom: .8rem; border-bottom: 1px solid var(--border); font-size: 1.1rem; color: var(--white); }
+    .auth-tabs { display: flex; gap: .5rem; margin-bottom: 1rem; }
+    .auth-tab { flex: 1; min-height: 44px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--gray); font: 700 .9rem 'Rajdhani', sans-serif; cursor: pointer; }
+    .auth-tab.active { background: var(--green-bright); border-color: var(--green-bright); color: #04130a; }
+    .auth-msg { display: none; margin: .2rem 0 .8rem; font-size: .88rem; line-height: 1.35; }
+    .auth-msg.show { display: block; }
+    .auth-msg--error { color: var(--red); }
+    .auth-msg:not(.auth-msg--error) { color: var(--lime); }
+
+    /* ========== PERFIL ========== */
+    .perfil-cabecera { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; margin-bottom: 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; }
+    .perfil-avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green-bright); box-shadow: 0 0 22px rgba(22, 163, 74,.35); background: #07120b; }
+    .perfil-meta { flex: 1; min-width: 180px; }
+    .perfil-nombre { font-size: 1.3rem; color: var(--white); overflow-wrap: anywhere; }
+    .perfil-tag { color: var(--green-bright); font-weight: 700; margin-bottom: .3rem; }
+    .perfil-bio { color: var(--gray); font-size: .92rem; line-height: 1.4; margin-bottom: .5rem; }
+    .perfil-badge-rol { display: inline-block; padding: .2rem .8rem; border-radius: 999px; font: 700 .72rem 'Orbitron', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+    .perfil-badge-rol--user { background: rgba(22, 163, 74,.15); color: var(--green-bright); border: 1px solid var(--green-bright); }
+    .perfil-badge-rol--admin { background: rgba(255,215,0,.15); color: var(--yellow); border: 1px solid var(--yellow); }
+    .perfil-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px,100%), 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .perfil-card { background: var(--card-bg); padding: 1rem; margin-bottom: 1rem; }
+    .perfil-grid .perfil-card { margin-bottom: 0; }
+    .perfil-card--admin { border-color: var(--yellow); }
+    .perfil-card__titulo { font-size: 1rem; color: var(--green-bright); margin-bottom: .8rem; }
+    .perfil-guest { max-width: 520px; margin: 1rem auto; text-align: center; }
+    .perfil-guest__icon { font-size: 2.6rem; margin-bottom: .4rem; }
+    .perfil-acciones { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; margin-top: .8rem; }
+    .perfil-datos { display: grid; grid-template-columns: auto 1fr; gap: .4rem .9rem; font-size: .92rem; }
+    .perfil-datos dt { color: var(--gray); }
+    .perfil-datos dd { color: var(--white); overflow-wrap: anywhere; }
+    .modal .btn, .perfil-card .btn[style*="100%"] { max-width: none; width: 100%; }
+
+    /* ========== CARRUSEL ========== */
+    .carousel { position: relative; }
+    .carousel__track { display: flex !important; gap: 1rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: .4rem .25rem 1rem; }
+    .carousel__track::-webkit-scrollbar { display: none; }
+    .carousel__track > * { flex: 0 0 calc((100% - 3rem) / 4); min-width: 0; scroll-snap-align: start; }
+    .carousel__btn { position: absolute; top: 45%; transform: translateY(-50%); z-index: 5; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--green-bright); background: rgba(7, 18, 11,.9); color: var(--green-bright); font-size: 1.9rem; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0 0 4px; cursor: pointer; box-shadow: 0 4px 16px rgba(22, 163, 74,.3); }
+    .carousel__btn:hover { background: var(--green-bright); color: #04130a; }
+    .carousel__btn[hidden] { display: none; }
+    .carousel__btn--prev { left: -.6rem; }
+    .carousel__btn--next { right: -.6rem; }
+    body.theme-light .carousel__btn { background: #fff; }
+    
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 1024px) {
+      .hero h1 { font-size: 2rem; }
+      .clock-panel .clock-time { font-size: 2.2rem; }
+      .carousel__track > * { flex-basis: calc((100% - 2rem) / 3); }
+    }
+    @media (max-width: 768px) {
+      .main-panel { width: 100%; height: 100dvh; min-width: 0; padding: 4.8rem 1rem 1.5rem; }
+      .sidebar { width: min(88vw, 320px); max-width: 100%; }
+      .hero h1 { font-size: 1.6rem; }
+      .hero p { font-size: 0.9rem; }
+      .clock-panel .clock-time { font-size: 1.5rem; }
+      .section-title h2 { font-size: 1.4rem; }
+      .cards-grid.grid-2, .cards-grid.grid-3, .cards-grid.grid-4 { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .player-row { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+      .remove-player { width: 100%; height: 32px; }
+      table { font-size: 0.7rem; }
+      thead th, tbody td { padding: 0.4rem; }
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .filters-bar input, .filters-bar select { max-width: 100%; }
+      .carousel__track > * { flex-basis: calc((100% - 1rem) / 2); }
+      .carousel__btn { width: 38px; height: 38px; font-size: 1.6rem; }
+      .carousel__btn--prev { left: -.3rem; }
+      .carousel__btn--next { right: -.3rem; }
+    }
+    @media (max-width: 480px) {
+      .main-panel { padding-top: 4.5rem; }
+      .utility-controls { right: .55rem; top: .7rem; gap: .4rem; }
+      .hero h1 { font-size: 1.3rem; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .btn { width: 100%; max-width: 250px; }
+      .hero-buttons .btn { max-width: none; }
+      .clock-panel .clock-time { font-size: 1.2rem; }
+      .events-stats { flex-direction: column; gap: 0.8rem; }
+      .demo-buttons { flex-direction: column; }
+      .demo-buttons .btn { width: 100%; }
+      .carousel__track > * { flex-basis: 78%; }
+      .utility-btn { min-height: 42px; min-width: 42px; padding: .5rem .65rem; border-radius: 10px; }
+      .install-btn { font-size: .8rem; }
+      .ragnarok-global-brand { top: .7rem; left: 4.25rem; width: 42px; height: 42px; }
+      .section-title { padding-top: 32px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .page-section { animation: none !important; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+      .card:hover, .btn:hover, .social-links a:hover { transform: none; }
+    }
+  
+    /* Tamaño de tarjetas según el carrusel y ajustes responsivos */
+    .carousel__track.grid-3 > * { flex-basis: calc((100% - 2rem) / 3); }
+    .carousel__track.grid-4 > * { flex-basis: calc((100% - 3rem) / 4); }
+    @media (max-width: 1024px) {
+      .carousel__track.grid-3 > * { flex-basis: calc((100% - 2rem) / 3); }
+      .carousel__track.grid-4 > * { flex-basis: calc((100% - 2rem) / 3); }
+    }
+    @media (max-width: 768px) {
+      .carousel__track.grid-3 > *, .carousel__track.grid-4 > * { flex-basis: calc((100% - 1rem) / 2); }
+    }
+    @media (max-width: 480px) {
+      .carousel__track.grid-3 > *, .carousel__track.grid-4 > * { flex-basis: 100%; }
+    }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#mainPanel">Saltar al contenido</a>
+<button class="hamburger-btn" id="hamburgerBtn" title="Menú" aria-label="Abrir menú de navegación" aria-controls="sidebar" aria-expanded="false">☰</button>
+
+<div class="utility-controls" aria-label="Opciones de cuenta, apariencia y aplicación">
+  <div class="admin-top-banner" id="adminTopBanner" role="region" aria-label="Perfil de administrador activo">
+    <img id="adminTopAvatar" class="admin-top-banner__avatar" alt="Avatar del administrador" width="32" height="32">
+    <div class="admin-top-banner__info">
+      <span id="adminTopName" class="admin-top-banner__name">Admin</span>
+      <span id="adminTopNick" class="admin-top-banner__meta">@admin · ADMIN</span>
+    </div>
+    <button type="button" class="admin-top-banner__btn" id="adminTopPanelBtn" title="Abrir Panel Admin">Panel</button>
+    <button type="button" class="admin-top-banner__btn" id="adminTopProfileBtn" title="Ver Mi Perfil">Perfil</button>
+  </div>
+
+  <div class="account-menu-wrapper" id="accountMenuWrapper">
+    <button class="utility-btn account-btn" id="accountBtn" type="button" aria-label="Menú de cuenta" aria-haspopup="menu" aria-expanded="false" aria-controls="accountDropdown" title="Cuenta">
+      <span id="accountIcon" aria-hidden="true">🔐</span>
+      <span id="accountBtnLabel" style="font-weight:700; font-size:0.82rem; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Cuenta</span>
+      <span class="account-btn__caret" aria-hidden="true">▾</span>
+    </button>
+    <div class="account-dropdown" id="accountDropdown" role="menu" aria-labelledby="accountBtn">
+      <div class="account-dropdown__header" id="accountDropdownHeader">
+        <span class="account-dropdown__title" id="accountDropdownTitle">Invitado</span>
+        <span class="account-dropdown__sub" id="accountDropdownSub">Sin sesión iniciada</span>
+      </div>
+      <div id="accountDropdownGuestActions">
+        <button type="button" class="account-dropdown__item" role="menuitem" id="menuLoginBtn"><span>🔑</span> Iniciar sesión</button>
+        <button type="button" class="account-dropdown__item" role="menuitem" id="menuRegisterBtn"><span>✨</span> Crear cuenta</button>
+      </div>
+      <div id="accountDropdownAuthActions" style="display:none;">
+        <button type="button" class="account-dropdown__item" role="menuitem" id="menuProfileBtn"><span>👤</span> Mi perfil</button>
+        <button type="button" class="account-dropdown__item admin-only" role="menuitem" id="menuAdminBtn" style="display:none;"><span>🛡️</span> Vista Admin</button>
+        <button type="button" class="account-dropdown__item account-dropdown__item--danger" role="menuitem" id="menuLogoutBtn"><span>🚪</span> Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="utility-btn" id="themeToggle" type="button" aria-label="Cambiar tema" title="Cambiar tema"><span id="themeIcon">☀</span></button>
+  <button class="utility-btn install-btn" id="installAppBtn" type="button" hidden aria-label="Instalar Ragnarok eSports">⬇ Instalar</button>
+</div>
+
+<div class="overlay" id="overlay" aria-hidden="true"></div>
+
+<div class="app-container">
+  <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+    <div class="sidebar-header">
+      <img src="imagenes/ragnarok-emblema.png" alt="Emblema Ragnarok">
+      <div class="brand-text">
+        <span>RAGNAROK</span>
+        <span>ESPORTS</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-section="inicio" aria-current="page"><span class="nav-icon">🏠</span> Inicio</button>
+      <button class="nav-btn" data-section="equipo"><span class="nav-icon">👥</span> Equipo</button>
+      <button class="nav-btn" data-section="juegos"><span class="nav-icon">🎮</span> Juegos</button>
+      <button class="nav-btn" data-section="torneos"><span class="nav-icon">🏆</span> Torneos</button>
+      <button class="nav-btn" data-section="inscripcion"><span class="nav-icon">📝</span> Inscripción de Equipos</button>
+      <button class="nav-btn" data-section="productos"><span class="nav-icon">🛒</span> Productos / Tienda</button>
+      <button class="nav-btn" data-section="patrocinadores"><span class="nav-icon">🤝</span> Patrocinadores</button>
+      <button class="nav-btn" data-section="eventos"><span class="nav-icon">⏱️</span> Eventos & Timestamp</button>
+      <button class="nav-btn admin-only" data-section="admin" style="display:none; border-color: rgba(255, 204, 0, 0.4); color: var(--yellow);"><span class="nav-icon">🛡️</span> Vista Admin</button>
+      <button class="nav-btn" data-section="contacto"><span class="nav-icon">📞</span> Contacto</button>
+    </nav>
+    <div class="sidebar-footer">
+      <p>© 2026 <span class="copyright">Ragnarok eSports</span></p>
+      <p style="font-size:0.65rem;margin-top:0.3rem;">Plataforma Gaming 🏆</p>
+    </div>
+  </aside>
+
+  <main class="main-panel" id="mainPanel" tabindex="-1" aria-label="Contenido principal de Ragnarok eSports">
+    <div class="ragnarok-global-brand" aria-label="Ragnarok eSports"><img src="imagenes/ragnarok-emblema.png" alt="Ragnarok"></div>
+
+    <!-- INICIO -->
+    <div class="page-section active" id="page-inicio">
+      <div class="hero">
+        <img src="imagenes/ragnarok-emblema.png" alt="Emblema Ragnarok eSports" class="hero-logo">
+        <h1>RAGNAROK ESPORTS</h1>
+        <p>Nuestro destino no está escrito, lo forjamos en la batalla. Competimos en Valorant, CS2 y League of Legends.</p>
+        <div class="hero-buttons">
+          <button class="btn" onclick="showSection('torneos')">Consultar Torneos</button>
+          <button class="btn btn-outline" onclick="showSection('inscripcion')">Inscribir Equipo</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><span class="stat-number">7</span><span class="stat-label">Jugadores</span></div>
+        <div class="stat-box"><span class="stat-number">3</span><span class="stat-label">Juegos</span></div>
+        <div class="stat-box"><span class="stat-number">4</span><span class="stat-label">Torneos Activos</span></div>
+        <div class="stat-box"><span class="stat-number">12+</span><span class="stat-label">Victorias</span></div>
+      </div>
+      <div class="section-title" style="margin-top:2rem;"><h2>Próximos Eventos</h2></div>
+      <div class="cards-grid grid-3">
+        <div class="card"><img src="imagenes/logogamer.jpeg" alt="Chukuta Gamer"><span class="badge">Valorant</span><h3>Chukuta Gamer 2026</h3><p class="desc">12 - 18 Junio 2026</p><p style="color:var(--green-bright);font-weight:700;">En cuartos de final</p></div>
+        <div class="card"><img src="imagenes/torneo2.jpeg" alt="Latam Championship"><span class="badge">Valorant</span><h3>Latam Valorant Championship</h3><p class="desc">26 - 28 Junio 2026</p><p style="color:var(--green-bright);font-weight:700;">Fase de grupos</p></div>
+        <div class="card"><img src="imagenes/torneo3.jpeg" alt="Liga Boliviana CS2"><span class="badge">CS2</span><h3>Liga Boliviana CS2</h3><p class="desc">Mayo - Julio 2026</p><p style="color:var(--green-bright);font-weight:700;">En curso</p></div>
+      </div>
+      <div class="section-title" style="margin-top:2rem;"><h2>Productos Destacados</h2></div>
+      <div class="carousel">
+        <button class="carousel__btn carousel__btn--prev" aria-label="Anterior">‹</button>
+        <div class="carousel__track cards-grid grid-3" id="productosDestacadosInicio"></div>
+        <button class="carousel__btn carousel__btn--next" aria-label="Siguiente">›</button>
+      </div>
+    </div>
+
+    <!-- EQUIPO -->
+    <div class="page-section" id="page-equipo">
+      <div class="section-title"><h2>Nuestro Equipo</h2><p>Jugadores profesionales de Ragnarok eSports</p></div>
+      <div class="filters-bar">
+        <select id="filtroJuegoEquipo"><option value="todos">Todos los juegos</option><option value="valorant">Valorant</option><option value="cs2">CS2</option><option value="lol">League of Legends</option></select>
+        <select id="filtroRolEquipo"><option value="todos">Todos los roles</option><option value="duelist">Duelist</option><option value="support">Support</option><option value="igl">IGL</option><option value="entry">Entry Fragger</option><option value="mid">Mid Laner</option><option value="jungla">Jungla</option><option value="controller">Controller</option></select>
+      </div>
+      <div class="carousel">
+        <button class="carousel__btn carousel__btn--prev" aria-label="Anterior">‹</button>
+        <div class="carousel__track cards-grid grid-4" id="equipoGrid">
+          <div class="card equipo-card" data-juego="valorant" data-rol="duelist"><img src="imagenes/jugador1.png" alt="Yupix"><span class="badge">Valorant</span><h3>Yupix</h3><p class="role">Duelist</p><p class="desc">K/D: 1.35 | MVP: 12</p></div>
+          <div class="card equipo-card" data-juego="valorant" data-rol="support"><img src="imagenes/jugador1.png" alt="Harit"><span class="badge">Valorant</span><h3>Harit</h3><p class="role">Support</p><p class="desc">Asistencias: 200+</p></div>
+          <div class="card equipo-card" data-juego="cs2" data-rol="igl"><img src="imagenes/jugador1.png" alt="Chizin"><span class="badge">CS2</span><h3>Chizin</h3><p class="role">IGL</p><p class="desc">Estratega principal</p></div>
+          <div class="card equipo-card" data-juego="cs2" data-rol="entry"><img src="imagenes/jugador1.png" alt="Kael"><span class="badge">CS2</span><h3>Kael</h3><p class="role">Entry Fragger</p><p class="desc">HS%: 48%</p></div>
+          <div class="card equipo-card" data-juego="lol" data-rol="mid"><img src="imagenes/jugador1.png" alt="Nero"><span class="badge">LoL</span><h3>Nero</h3><p class="role">Mid Laner</p><p class="desc">KDA: 4.2</p></div>
+          <div class="card equipo-card" data-juego="lol" data-rol="jungla"><img src="imagenes/jugador1.png" alt="Lynx"><span class="badge">LoL</span><h3>Lynx</h3><p class="role">Jungla</p><p class="desc">Objetivos: 90%</p></div>
+          <div class="card equipo-card" data-juego="valorant" data-rol="controller"><img src="imagenes/jugador1.png" alt="Raze"><span class="badge">Valorant</span><h3>Raze</h3><p class="role">Controller</p><p class="desc">Clutch: 15</p></div>
+        </div>
+        <button class="carousel__btn carousel__btn--next" aria-label="Siguiente">›</button>
+      </div>
+    </div>
+
+    <!-- JUEGOS -->
+    <div class="page-section" id="page-juegos">
+      <div class="section-title"><h2>Juegos de la Temporada</h2><p>Competiciones oficiales de Ragnarok eSports</p></div>
+      <div class="cards-grid grid-3">
+        <div class="card"><img src="imagenes/juego1.jpeg" alt="Valorant"><span class="badge">Valorant</span><h3>Valorant</h3><p class="desc">Shooter táctico 5v5 con agentes y habilidades únicas.</p><p style="color:var(--green-bright);font-weight:700;margin-top:0.5rem;">3 torneos activos</p></div>
+        <div class="card"><img src="imagenes/juego2.jpeg" alt="CS2"><span class="badge">CS2</span><h3>Counter-Strike 2</h3><p class="desc">El clásico shooter competitivo con gráficos actualizados.</p><p style="color:var(--green-bright);font-weight:700;margin-top:0.5rem;">2 torneos activos</p></div>
+        <div class="card"><img src="imagenes/jugador1.png" alt="LoL"><span class="badge">LoL</span><h3>League of Legends</h3><p class="desc">MOBA 5v5 con campeones y estrategia por equipos.</p><p style="color:var(--green-bright);font-weight:700;margin-top:0.5rem;">1 torneo activo</p></div>
+      </div>
+    </div>
+
+    <!-- TORNEOS -->
+    <div class="page-section" id="page-torneos">
+      <div class="section-title"><h2>Torneos</h2><p>Competiciones donde Ragnarok eSports participa</p></div>
+      <div class="filters-bar">
+        <select id="filtroJuegoTorneo"><option value="todos">Todos los juegos</option><option value="valorant">Valorant</option><option value="cs2">CS2</option><option value="lol">League of Legends</option></select>
+        <select id="filtroEstadoTorneo"><option value="todos">Todos los estados</option><option value="proximo">Próximamente</option><option value="encurso">En curso</option><option value="finalizado">Finalizado</option></select>
+      </div>
+      <div class="cards-grid grid-3" id="torneosGrid">
+        <div class="card torneo-card" data-juego="valorant" data-estado="encurso"><img src="imagenes/logogamer.jpeg" alt="Chukuta Gamer 2026"><span class="badge">Valorant</span><h3>Chukuta Gamer 2026</h3><p class="desc">Eliminación directa | 12 - 18 Junio 2026</p><p class="desc">Equipos: 16 | Premio: $1000</p><p style="color:var(--green-bright);font-weight:700;">En cuartos de final</p></div>
+        <div class="card torneo-card" data-juego="valorant" data-estado="encurso"><img src="imagenes/torneo2.jpeg" alt="Latam Championship"><span class="badge">Valorant</span><h3>Latam Valorant Championship</h3><p class="desc">Grupos + Playoffs | 26 - 28 Junio 2026</p><p class="desc">Equipos: 12 | Premio: $2500</p><p style="color:var(--green-bright);font-weight:700;">Fase de grupos</p></div>
+        <div class="card torneo-card" data-juego="cs2" data-estado="encurso"><img src="imagenes/torneo3.jpeg" alt="Liga Boliviana CS2"><span class="badge">CS2</span><h3>Liga Boliviana CS2</h3><p class="desc">Round Robin | Mayo - Julio 2026</p><p class="desc">Equipos: 8 | Premio: $800</p><p style="color:var(--green-bright);font-weight:700;">En curso</p></div>
+        <div class="card torneo-card" data-juego="lol" data-estado="proximo"><img src="imagenes/torneo2.jpeg" alt="League Regional Cup"><span class="badge">LoL</span><h3>League Regional Cup</h3><p class="desc">Eliminación doble | Agosto 2026</p><p class="desc">Equipos: 8 | Premio: $1500</p><p style="color:var(--yellow);font-weight:700;">Próximamente</p></div>
+      </div>
+    </div>
+
+    <!-- INSCRIPCIÓN -->
+    <div class="page-section" id="page-inscripcion">
+      <div class="section-title"><h2>Inscripción de Equipos</h2><p>Registra tu equipo para participar en los torneos</p></div>
+      <div style="max-width:900px; margin:0 auto;">
+        <div class="alert alert-success" id="inscripcionSuccess" role="status" aria-live="polite"></div>
+        <div class="alert alert-error" id="inscripcionError" role="status" aria-live="polite"></div>
+        <form id="formInscripcion" style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:2rem;" novalidate>
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:1rem;">📋 Información del Equipo</h3>
+          <div class="form-row">
+            <div class="form-group"><label>Nombre del Equipo *</label><input type="text" id="teamName" required placeholder="Ej: Ragnarok Alpha"><span class="error-msg" id="err-teamName">Este campo es obligatorio</span></div>
+            <div class="form-group"><label>Juego *</label><select id="teamGame" required><option value="">Seleccionar juego</option><option value="valorant">Valorant (5 jugadores)</option><option value="cs2">CS2 (5 jugadores)</option><option value="lol">League of Legends (5 jugadores)</option></select><span class="error-msg" id="err-teamGame">Selecciona un juego</span></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Nombre del Capitán *</label><input type="text" id="teamCaptain" required placeholder="Nombre completo"><span class="error-msg" id="err-teamCaptain">Este campo es obligatorio</span></div>
+            <div class="form-group"><label>Correo Electrónico *</label><input type="email" id="teamEmail" required placeholder="correo@ejemplo.com"><span class="error-msg" id="err-teamEmail">Ingresa un correo válido</span></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Número de Celular *</label><input type="tel" id="teamPhone" required placeholder="+591 700-00000"><span class="error-msg" id="err-teamPhone">Ingresa un teléfono válido (mín. 8 dígitos)</span></div>
+            <div class="form-group"><label>País *</label><select id="teamCountry" required><option value="">Seleccionar país</option><option value="bolivia">Bolivia</option><option value="argentina">Argentina</option><option value="brasil">Brasil</option><option value="chile">Chile</option><option value="colombia">Colombia</option><option value="peru">Perú</option><option value="otros">Otros</option></select><span class="error-msg" id="err-teamCountry">Selecciona un país</span></div>
+          </div>
+          <h3 style="color:var(--green-bright); font-size:1rem; margin:1.5rem 0 1rem;">👥 Jugadores (5 requeridos)</h3>
+          <div id="playersContainer"></div>
+          <div style="text-align:center; margin-top:1rem;"><button type="button" class="btn btn-sm" id="addPlayerBtn">+ Agregar Jugador</button></div>
+          <div id="playerError" role="status" aria-live="polite" style="color:var(--red); font-size:0.85rem; margin:1rem 0; display:none;"></div>
+          <div class="preview-box" id="previewBox"><h4>📋 Vista Previa de Inscripción</h4><div id="previewContent" aria-live="polite"></div></div>
+          <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-outline" id="previewBtn">👁️ Vista Previa</button>
+            <button type="submit" class="btn">✅ Enviar Inscripción</button>
+          </div>
+        </form>
+        <div style="margin-top:2rem;">
+          <div class="section-title"><h2 style="font-size:1.3rem;">Equipos Inscritos</h2></div>
+          <div class="filters-bar"><select id="filtroJuegoInscripcion"><option value="todos">Todos los juegos</option><option value="valorant">Valorant</option><option value="cs2">CS2</option><option value="lol">League of Legends</option></select></div>
+          <div class="table-responsive">
+            <table><thead><tr><th>Equipo</th><th>Juego</th><th>Capitán</th><th>Código</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="inscripcionesTableBody"><tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#555;">No hay equipos inscritos aún.</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTOS -->
+    <div class="page-section" id="page-productos">
+      <div class="section-title"><h2>Tienda Oficial</h2><p>Equípate como un verdadero pro gamer</p></div>
+      <div class="category-pills" id="categoryPills">
+        <button class="category-pill active" data-categoria="todos">Todos</button>
+        <button class="category-pill" data-categoria="ropa">Ropa y Vestimenta</button>
+        <button class="category-pill" data-categoria="accesorios">Accesorios</button>
+        <button class="category-pill" data-categoria="perifericos">Periféricos Gaming</button>
+        <button class="category-pill" data-categoria="coleccionables">Coleccionables</button>
+        <button class="category-pill" data-categoria="merchandising">Merchandising Ragnarok</button>
+      </div>
+      <div class="filters-bar">
+        <input type="search" id="searchProductos" aria-label="Buscar producto" placeholder="🔍 Buscar producto...">
+        <input type="number" id="precioMin" aria-label="Precio mínimo" placeholder="Precio mín ($)" min="0">
+        <input type="number" id="precioMax" aria-label="Precio máximo" placeholder="Precio máx ($)" min="0">
+        <select id="filtroDisponibilidad"><option value="todos">Todos</option><option value="disponible">Disponible</option><option value="agotado">Agotado</option></select>
+        <select id="filtroDestacados"><option value="todos">Todos</option><option value="destacados">Solo Destacados</option></select>
+        <select id="ordenProductos"><option value="default">Ordenar por...</option><option value="precio-asc">Precio: Menor a Mayor</option><option value="precio-desc">Precio: Mayor a Menor</option><option value="nombre-asc">Nombre: A-Z</option></select>
+        <button class="btn btn-sm btn-outline" id="resetFiltros">🔄 Limpiar Filtros</button>
+      </div>
+      <div id="resultCount" role="status" aria-live="polite" style="text-align:center;color:var(--gray);font-size:0.85rem;margin-bottom:1rem;"></div>
+      
+      <!-- CARRUSEL DE PRODUCTOS -->
+      <div class="carousel">
+        <button class="carousel__btn carousel__btn--prev" aria-label="Anterior">‹</button>
+        <div class="carousel__track cards-grid grid-4" id="productosGrid"></div>
+        <button class="carousel__btn carousel__btn--next" aria-label="Siguiente">›</button>
+      </div>
+    </div>
+
+    <!-- PATROCINADORES -->
+    <div class="page-section" id="page-patrocinadores">
+      <div class="section-title"><h2>Nuestros Patrocinadores</h2><p>Gracias al apoyo de nuestras marcas aliadas</p></div>
+      <div class="cards-grid grid-3">
+        <div class="card"><img src="imagenes/patrocinador1.jpeg" alt="Patrocinador 1" style="object-fit:contain;height:100px;"><h3>Marca Aliada</h3><p class="desc">Periféricos gaming de alto rendimiento.</p><span class="badge">Patrocinador Oficial</span></div>
+        <div class="card"><img src="imagenes/patrocinador2.jpeg" alt="Patrocinador 2" style="object-fit:contain;height:100px;"><h3>Hardware Pro</h3><p class="desc">Proveedor oficial de hardware.</p><span class="badge">Proveedor Técnico</span></div>
+        <div class="card"><img src="imagenes/patrocinador3.jpeg" alt="Patrocinador 3" style="object-fit:contain;height:100px;"><h3>Estrategia Global</h3><p class="desc">Aliado estratégico en eventos.</p><span class="badge">Aliado Estratégico</span></div>
+      </div>
+    </div>
+
+    <!-- EVENTOS -->
+    <div class="page-section" id="page-eventos">
+      <div class="section-title"><h2>Sistema de Eventos y Timestamp</h2><p>Reloj en tiempo real y registro de actividades</p></div>
+      <div class="clock-panel">
+        <div class="clock-label">HORA LOCAL — RAGNAROK ESPORTS</div>
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">Cargando fecha...</div>
+        <div class="clock-timestamp">Timestamp actual: <strong id="clockTimestamp">0</strong> ms<br><span style="font-size:0.7rem;color:#555;">Última actualización del historial: <span id="lastUpdate">--</span></span></div>
+      </div>
+      <div class="events-stats">
+        <div class="stat-item"><span class="stat-value" id="totalEvents">0</span><span class="stat-label">Eventos Registrados</span></div>
+        <div class="stat-item"><span class="stat-value" id="lastEventName">--</span><span class="stat-label">Último Evento</span></div>
+      </div>
+      <div class="events-controls">
+        <button class="btn btn-sm" id="btnRefreshEvents">🔄 Actualizar Historial</button>
+        <button class="btn btn-sm btn-danger" id="btnClearEvents">🗑️ Limpiar Registros</button>
+      </div>
+      <div class="table-responsive">
+        <table id="eventsTable"><thead><tr><th>Evento</th><th>Descripción</th><th>Fecha</th><th>Hora</th><th>Timestamp</th></tr></thead><tbody id="eventsTableBody"></tbody></table>
+      </div>
+      <div class="jquery-demo">
+        <h3>🧪 Prueba de Eventos jQuery</h3>
+        <div class="demo-buttons">
+          <button class="btn btn-sm" id="demoClick">Click</button>
+          <button class="btn btn-sm" id="demoDblClick">Doble Click</button>
+          <button class="btn btn-sm" id="demoHover">Hover</button>
+          <button class="btn btn-sm" id="demoChange">Change</button>
+          <button class="btn btn-sm" id="demoHide">Hide</button>
+          <button class="btn btn-sm" id="demoShow">Show</button>
+          <button class="btn btn-sm" id="demoFadeToggle">FadeToggle</button>
+        </div>
+        <div class="demo-box" id="demoBox">Interactúa con los botones para registrar eventos.</div>
+      </div>
+    </div>
+
+    <!-- CUENTA / PERFIL -->
+    <div class="page-section" id="page-cuenta">
+      <div class="section-title"><h2>Mi Perfil</h2><p>Tu cuenta de Ragnarok eSports</p></div>
+      <div class="alert alert-success" id="perfilLoginSuccess" role="status" aria-live="polite" style="display:none; max-width:520px; margin:0 auto 1rem; text-align:center; font-weight:700; font-size:1rem;">
+        ✅ Inicio completado
+      </div>
+      <div id="perfilUser" style="display:block;">
+        <div class="perfil-cabecera">
+          <img id="perfilAvatarImg" class="perfil-avatar" alt="Avatar del perfil" width="88" height="88">
+          <div class="perfil-meta">
+            <h3 id="currentUserLabel" class="perfil-nombre">Invitado</h3>
+            <div id="perfilTag" class="perfil-tag">@jugador</div>
+            <p id="perfilBio" class="perfil-bio"></p>
+            <span id="currentUserRole" class="perfil-badge-rol perfil-badge-rol--user">ninguno</span>
+          </div>
+        </div>
+        <div class="perfil-grid">
+          <div class="perfil-card">
+            <h3 class="perfil-card__titulo">📇 Datos de la cuenta</h3>
+            <dl class="perfil-datos"><dt>Correo</dt><dd id="perfilEmail">—</dd><dt>Miembro desde</dt><dd id="perfilDesde">—</dd><dt>Rol</dt><dd id="perfilRolTexto">—</dd></dl>
+            <div class="perfil-acciones">
+              <button type="button" class="btn btn-sm btn-outline admin-only" id="btnPerfilIrAdmin" style="display:none;">🛡️ Panel admin</button>
+              <button type="button" class="btn btn-sm btn-danger" id="btnLogoutSupabase">🚪 Cerrar sesión</button>
+            </div>
+          </div>
+          <div class="perfil-card">
+            <h3 class="perfil-card__titulo">✏️ Editar perfil</h3>
+            <form id="formEditarPerfil" novalidate>
+              <div class="form-group"><label for="editNombre">Nombre visible</label><input type="text" id="editNombre" maxlength="60"></div>
+              <div class="form-group"><label for="editNick">Nickname (sin @)</label><input type="text" id="editNick" maxlength="20"></div>
+              <div class="form-group"><label for="editBio">Biografía</label><textarea id="editBio" rows="2" maxlength="160"></textarea></div>
+              <div class="form-group"><label for="editAvatar">URL de avatar</label><input type="url" id="editAvatar" placeholder="https://…"></div>
+              <small id="msgPerfil" class="auth-msg" role="status" aria-live="polite"></small>
+              <button type="submit" class="btn" style="width:100%;">Guardar cambios</button>
+            </form>
+          </div>
+        </div>
+        <div id="adminPanelBox" class="perfil-card perfil-card--admin" style="display:none;">
+          <h3 class="perfil-card__titulo">🛡️ Roles de usuarios</h3>
+          <div id="adminProfilesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="page-section" id="page-admin">
+      <div class="section-title"><h2>🛡️ Panel de Vista Admin</h2><p>Administración centralizada</p></div>
+      <div id="adminAccessDenied" class="alert alert-error" style="display:none; max-width:700px; margin:0 auto 1.5rem; text-align:center;">⛔ Acceso restringido. Inicia sesión como ADMIN.</div>
+      <div id="adminDashboardContent" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:var(--card-bg); border:1px solid var(--green-main); border-radius:12px; padding:1rem 1.2rem; margin-bottom:1.5rem;">
+          <div><span style="color:var(--green-bright); font-weight:700;">Modo activo:</span> <span id="adminViewModeBadge" class="badge" style="margin-left:0.4rem;">VISTA ADMIN</span></div>
+          <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-sm btn-outline" id="btnRefreshAdminData">🔄 Actualizar Datos</button>
+            <button type="button" class="btn btn-sm" onclick="showSection('cuenta')">👤 Ir a Mi Cuenta</button>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box"><span class="stat-number" id="adminStatUsers">0</span><span class="stat-label">Usuarios Registrados</span></div>
+          <div class="stat-box"><span class="stat-number" id="adminStatAdmins">0</span><span class="stat-label">Administradores</span></div>
+          <div class="stat-box"><span class="stat-number" id="adminStatTeams">0</span><span class="stat-label">Equipos Inscritos</span></div>
+          <div class="stat-box"><span class="stat-number" id="adminStatPending">0</span><span class="stat-label">Equipos Pendientes</span></div>
+        </div>
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:0.5rem;">👥 Gestión de Usuarios y Roles (Supabase)</h3>
+          <div id="adminProfilesTableContainer"></div>
+        </div>
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:0.5rem;">🏆 Aprobación de Equipos Inscritos</h3>
+          <div class="table-responsive">
+            <table><thead><tr><th>Equipo</th><th>Juego</th><th>Capitán</th><th>Código</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="adminInscripcionesTableBody"></tbody></table>
+          </div>
+        </div>
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem;">
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:0.5rem;">📦 Pedidos de clientes</h3>
+          <div class="table-responsive"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Teléfono</th><th>Dirección</th><th>Total</th><th>Estado</th></tr></thead><tbody id="adminOrdersTableBody"></tbody></table></div>
+        </div>
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.5rem;">
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:0.5rem;">🛒 Control Rápido de Inventario</h3>
+          <div class="table-responsive">
+            <table><thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Destacado</th><th>Acciones</th></tr></thead><tbody id="adminProductosTableBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACTO -->
+    <div class="page-section" id="page-contacto">
+      <div class="section-title"><h2>Contacto</h2><p>Ponte en contacto con Ragnarok eSports</p></div>
+      <div class="contact-info-grid">
+        <div class="contact-info-card"><span class="contact-icon">📍</span><h4>Ubicación</h4><p>Av. Gamer 1234<br>Ciudad de los Videojuegos</p></div>
+        <div class="contact-info-card"><span class="contact-icon">📞</span><h4>Teléfono</h4><p>+591 700-12345<br>+591 700-67890</p></div>
+        <div class="contact-info-card"><span class="contact-icon">✉️</span><h4>Email</h4><p>info@ragnarokesports.com<br>soporte@ragnarokesports.com</p></div>
+        <div class="contact-info-card"><span class="contact-icon">🕐</span><h4>Horarios</h4><p>Lun - Vie: 9:00 - 20:00<br>Sáb - Dom: 10:00 - 18:00</p></div>
+      </div>
+      <div style="text-align:center; margin-bottom:2rem;">
+        <div class="social-links">
+          <a href="https://facebook.com" target="_blank" title="Facebook">📘</a>
+          <a href="https://instagram.com" target="_blank" title="Instagram">📷</a>
+          <a href="https://tiktok.com" target="_blank" title="TikTok">🎵</a>
+          <a href="https://youtube.com" target="_blank" title="YouTube">▶️</a>
+          <a href="https://discord.gg" target="_blank" title="Discord">💬</a>
+          <a href="https://wa.me/59170012345" target="_blank" title="WhatsApp">📱</a>
+        </div>
+      </div>
+      <div style="max-width:600px; margin:0 auto;">
+        <div class="alert alert-success" id="contactSuccess" role="status" aria-live="polite"></div>
+        <div class="alert alert-error" id="contactError" role="status" aria-live="polite"></div>
+        <form id="formContacto" style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:2rem;" novalidate>
+          <h3 style="color:var(--green-bright); font-size:1rem; margin-bottom:1rem;">📝 Formulario de Consulta</h3>
+          <div class="form-group"><label>Nombre *</label><input type="text" id="contactName" required placeholder="Tu nombre"><span class="error-msg" id="err-contactName">Este campo es obligatorio</span></div>
+          <div class="form-group"><label>Email *</label><input type="email" id="contactEmail" required placeholder="tu@email.com"><span class="error-msg" id="err-contactEmail">Ingresa un correo válido</span></div>
+          <div class="form-group"><label>Asunto *</label><input type="text" id="contactSubject" required placeholder="Motivo de consulta"><span class="error-msg" id="err-contactSubject">Este campo es obligatorio</span></div>
+          <div class="form-group"><label>Mensaje *</label><textarea id="contactMessage" rows="4" required placeholder="Escribe tu mensaje..."></textarea><span class="error-msg" id="err-contactMessage">Este campo es obligatorio</span></div>
+          <button type="submit" class="btn" style="width:100%;">📨 Enviar Mensaje</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL DE ACCESO -->
+<div id="modalAuth" class="modal" style="display:none;" aria-hidden="true">
+  <div class="modal__caja" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <button type="button" class="modal__cerrar" id="closeModalAuth" aria-label="Cerrar">×</button>
+    <h2 class="modal__titulo" id="authModalTitle"><span aria-hidden="true">🔐</span> Cuenta Ragnarok</h2>
+        <div id="authProfileBox" style="display:none; margin-bottom:1rem; padding:1rem; background:rgba(22,163,74,0.08); border:1px solid var(--border); border-radius:12px;">
+      <div style="display:flex; align-items:center; gap:0.85rem; margin-bottom:0.8rem;">
+        <img id="modalProfileAvatar" alt="Avatar" width="54" height="54" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--green-bright);background:#07120b;">
+        <div style="min-width:0; flex:1;">
+          <div id="modalProfileName" style="font-family:'Orbitron',sans-serif;font-size:0.9rem;color:var(--white);overflow:hidden;text-overflow:ellipsis;">—</div>
+          <div id="modalProfileNick" style="color:var(--green-bright);font-weight:700;font-size:0.85rem;">@jugador</div>
+          <div id="modalProfileEmail" style="color:var(--gray);font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;">—</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm" id="modalGoProfileBtn" style="flex:1;">Ver Perfil Completo</button>
+        <button type="button" class="btn btn-sm btn-danger" id="modalLogoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div class="auth-tabs" role="tablist" id="authTabsBox">
+      <button type="button" role="tab" class="auth-tab active" id="tabLogin" aria-selected="true">Iniciar sesión</button>
+      <button type="button" role="tab" class="auth-tab" id="tabRegistro" aria-selected="false">Crear cuenta</button>
+    </div>
+    <form id="formLoginSupabase" novalidate>
+      <div class="form-group"><label for="loginEmail">Correo</label><input type="email" id="loginEmail" placeholder="tu@correo.com"></div>
+      <div class="form-group"><label for="loginPassword">Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <small id="errorLogin" class="auth-msg auth-msg--error" role="alert" aria-live="assertive"></small>
+      <button type="submit" class="btn" style="width:100%;">Entrar</button>
+    </form>
+    <form id="formRegisterSupabase" style="display:none;" novalidate>
+      <div class="form-group"><label for="regName">Nombre completo</label><input type="text" id="regName" placeholder="Tu nombre" maxlength="60"></div>
+      <div class="form-group"><label for="regNick">Nickname</label><input type="text" id="regNick" placeholder="Ej: Valkyrie99" maxlength="20"></div>
+      <div class="form-group"><label for="regEmail">Correo</label><input type="email" id="regEmail" placeholder="tu@correo.com"></div>
+      <div class="form-group"><label for="regPassword">Contraseña (mín. 6)</label><input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" minlength="6"></div>
+      <small id="errorRegistro" class="auth-msg auth-msg--error" role="alert" aria-live="assertive"></small>
+      <button type="submit" class="btn" style="width:100%;">Crear cuenta</button>
+    </form>
+  </div>
+</div>
+
+<script src="script.js?v=15"></script>
+</body>
+</html>

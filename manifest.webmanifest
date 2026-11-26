@@ -1,0 +1,26 @@
+{
+  "name": "Ragnarok eSports Bolivia",
+  "short_name": "Ragnarok",
+  "description": "Plataforma oficial Ragnarok eSports",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07120b",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "es"
+}
