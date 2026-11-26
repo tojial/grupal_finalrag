@@ -835,8 +835,8 @@
       </div>
       <div class="filters-bar">
         <input type="search" id="searchProductos" aria-label="Buscar producto" placeholder="🔍 Buscar producto...">
-        <input type="number" id="precioMin" aria-label="Precio mínimo" placeholder="Precio mín ($)" min="0">
-        <input type="number" id="precioMax" aria-label="Precio máximo" placeholder="Precio máx ($)" min="0">
+        <input type="number" id="precioMin" aria-label="Precio mínimo" placeholder="Precio mín (Bs)" min="0">
+        <input type="number" id="precioMax" aria-label="Precio máximo" placeholder="Precio máx (Bs)" min="0">
         <select id="filtroDisponibilidad"><option value="todos">Todos</option><option value="disponible">Disponible</option><option value="agotado">Agotado</option></select>
         <select id="filtroDestacados"><option value="todos">Todos</option><option value="destacados">Solo Destacados</option></select>
         <select id="ordenProductos"><option value="default">Ordenar por...</option><option value="precio-asc">Precio: Menor a Mayor</option><option value="precio-desc">Precio: Mayor a Menor</option><option value="nombre-asc">Nombre: A-Z</option></select>
@@ -1057,6 +1057,33 @@
       <button type="submit" class="btn" style="width:100%;">Crear cuenta</button>
     </form>
   </div>
+</div>
+
+<!-- CARRITO DESPLEGABLE EN BURBUJA (BOLIVIANOS) -->
+<div id="rgnCartBubbleWrap" style="position:fixed;right:1.1rem;bottom:1.1rem;z-index:1800;font-family:'Rajdhani',sans-serif;">
+  <div id="rgnCartDrawer" style="display:none;width:min(92vw,350px);max-height:72vh;margin-bottom:0.65rem;background:#111713;border:1px solid #22c55e;border-radius:16px;padding:1rem;box-shadow:0 14px 36px rgba(0,0,0,0.65);color:#fff;">
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1a2e1f;padding-bottom:0.55rem;margin-bottom:0.7rem;">
+      <strong style="font-family:'Orbitron',sans-serif;font-size:0.85rem;color:#22c55e;">🛒 Tu Pedido (Bs)</strong>
+      <button type="button" id="rgnCartClose" aria-label="Cerrar carrito" style="background:none;border:none;color:#a3a3a3;font-size:1.3rem;cursor:pointer;">×</button>
+    </div>
+    <div id="rgnCartItems" style="max-height:38vh;overflow-y:auto;display:flex;flex-direction:column;gap:0.55rem;"></div>
+    <div style="border-top:1px solid #1a2e1f;margin-top:0.75rem;padding-top:0.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;font-size:1rem;">
+        <span>Total:</span>
+        <strong id="rgnCartTotalBs" style="font-family:'Orbitron',sans-serif;color:#22c55e;font-size:1.05rem;">Bs 0.00</strong>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <button type="button" id="rgnCartClear" class="btn btn-sm btn-danger" style="flex:0 0 auto;">Vaciar</button>
+        <button type="button" id="rgnCartCheckout" class="btn btn-sm" style="flex:1;">Confirmar Pedido</button>
+      </div>
+    </div>
+  </div>
+  <button type="button" id="rgnCartBubbleBtn" aria-label="Abrir carrito" style="display:flex;align-items:center;gap:0.55rem;padding:0.75rem 1.05rem;border-radius:999px;border:2px solid #22c55e;background:linear-gradient(135deg,#16a34a,#052e16);color:#fff;font-family:'Orbitron',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;box-shadow:0 8px 25px rgba(22,163,74,0.45);margin-left:auto;">
+    <span>🛒</span>
+    <span id="rgnCartCount">0</span>
+    <span>·</span>
+    <span id="rgnCartBubbleTotal">Bs 0.00</span>
+  </button>
 </div>
 
 <script src="script.js?v=15"></script>
