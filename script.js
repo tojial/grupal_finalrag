@@ -108,6 +108,7 @@
     ];
 
     productosData = [...productosBase];
+    window.productosData = productosData;
 
     // ============================================================
     // 3. CARGAR DATOS
@@ -437,7 +438,7 @@
             <h3>${p.nombre}</h3>
             <p class="desc">${p.desc}</p>
             <p style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;">${p.categoria}</p>
-            <p class="price">$${p.precio}</p>
+            <p class="price">Bs ${Number(p.precio).toFixed(2)}</p>
             <p style="font-size:0.8rem;color:${disponibilidadColor};font-weight:700;">${disponibilidadTexto}</p>
             <button class="btn btn-sm toggle-detail" data-target="detail-${p.id}" aria-controls="detail-${p.id}" aria-expanded="false">Ver Detalles</button>
             <button class="btn btn-sm btn-pedido-producto" data-id="${p.id}" ${p.disponible ? '' : 'disabled'}>🛒 Hacer Pedido</button>
@@ -445,7 +446,7 @@
               <h4>📋 DETALLES DEL PRODUCTO</h4>
               <ul>
                 <li>Categoría: <span>${p.categoria}</span></li>
-                <li>Precio: <span>$${p.precio}</span></li>
+                <li>Precio: <span>Bs ${Number(p.precio).toFixed(2)}</span></li>
                 <li>Disponibilidad: <span>${disponibilidadTexto}</span></li>
               </ul>
             </div>
@@ -467,7 +468,7 @@
             <span class="badge badge-featured">Destacado</span>
             <h3>${p.nombre}</h3>
             <p class="desc">${p.desc}</p>
-            <p class="price">$${p.precio}</p>
+            <p class="price">Bs ${Number(p.precio).toFixed(2)}</p>
           </div>
         `);
       });
@@ -1491,7 +1492,7 @@
           <tr>
             <td>${p.nombre}</td>
             <td style="text-transform:uppercase;">${p.categoria}</td>
-            <td>$${p.precio}</td>
+            <td>Bs ${Number(p.precio).toFixed(2)}</td>
             <td style="color:${dispColor};font-weight:700;">${p.disponible ? 'DISPONIBLE' : 'AGOTADO'}</td>
             <td>${p.destacado ? '⭐ Sí' : 'No'}</td>
             <td style="display:flex; gap:0.4rem; flex-wrap:wrap;">
@@ -1542,6 +1543,7 @@
       if (error) { console.warn('Catálogo Supabase:', error.message); return; }
       if (data && data.length) {
         productosData = data.map(row => ({ id: row.id, nombre: row.name, categoria: row.category, precio: Number(row.price), img: row.image, desc: row.description, destacado: row.featured, nuevo: row.is_new, disponible: row.available }));
+        window.productosData = productosData;
         renderizarProductos(); renderizarProductosDestacados(); renderizarTablaProductosAdmin();
       } else if (currentProfile?.role === 'admin') {
         const initial = productosBase.map(p => ({ id:p.id, name:p.nombre, category:p.categoria, price:p.precio, image:p.img, description:p.desc, featured:p.destacado, is_new:p.nuevo, available:p.disponible }));
@@ -1588,18 +1590,126 @@
       prod.nombre = name.trim(); prod.precio = price; prod.desc = description.trim();
       await syncProductToSupabase(prod); renderizarProductos(); renderizarProductosDestacados(); renderizarTablaProductosAdmin();
     });
-    $(document).on('click', '.btn-pedido-producto', async function() {
-      const prod = productosData.find(p => p.id === Number($(this).data('id'))); if (!prod || !prod.disponible) return;
+    // ============================================================
+    // 21. CARRITO DESPLEGABLE EN BURBUJA (BOLIVIANOS - Bs)
+    // ============================================================
+    const CART_KEY = 'ragnarok_carrito_bs_v1';
+    let carrito = [];
+    try { carrito = JSON.parse(safeGet(CART_KEY, '[]')); } catch (_) { carrito = []; }
+
+    const fmtBs = n => 'Bs ' + (Number(n) || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const saveCart = () => safeSet(CART_KEY, JSON.stringify(carrito));
+
+    function renderCart() {
+      const $items = $('#rgnCartItems');
+      const $drawer = $('#rgnCartDrawer');
+      if (!$items.length) return;
+      $items.empty();
+
+      let totalQty = 0;
+      let totalBs = 0;
+
+      if (!carrito.length) {
+        $items.html('<p style="color:#a3a3a3;font-size:0.85rem;text-align:center;padding:0.8rem 0;">Tu carrito está vacío.</p>');
+      } else {
+        carrito.forEach(item => {
+          const subBs = Number(item.precio) * item.qty;
+          totalQty += item.qty;
+          totalBs += subBs;
+          $items.append(`
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;background:#080b09;border:1px solid #1a2e1f;border-radius:10px;padding:0.55rem 0.65rem;">
+              <div style="min-width:0;flex:1;">
+                <div style="font-weight:700;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.nombre}</div>
+                <div style="color:#22c55e;font-size:0.8rem;">${fmtBs(item.precio)} c/u · <strong>${fmtBs(subBs)}</strong></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.3rem;">
+                <button type="button" class="rgn-qty-btn" data-id="${item.id}" data-d="-1" style="width:24px;height:24px;border-radius:6px;border:1px solid #22c55e;background:none;color:#fff;cursor:pointer;">-</button>
+                <span style="min-width:18px;text-align:center;font-size:0.85rem;font-weight:700;">${item.qty}</span>
+                <button type="button" class="rgn-qty-btn" data-id="${item.id}" data-d="1" style="width:24px;height:24px;border-radius:6px;border:1px solid #22c55e;background:none;color:#fff;cursor:pointer;">+</button>
+              </div>
+            </div>
+          `);
+        });
+      }
+
+      $('#rgnCartCount').text(totalQty);
+      $('#rgnCartBubbleTotal').text(fmtBs(totalBs));
+      $('#rgnCartTotalBs').text(fmtBs(totalBs));
+      $drawer.data('totalBs', totalBs);
+    }
+
+    function addToCart(prod) {
+      if (!prod || !prod.disponible) return;
+      const found = carrito.find(x => Number(x.id) === Number(prod.id));
+      if (found) found.qty += 1;
+      else carrito.push({ id: prod.id, nombre: prod.nombre, precio: Number(prod.precio) || 0, qty: 1 });
+      saveCart();
+      renderCart();
+      $('#rgnCartDrawer').stop(true, true).slideDown(180);
+      registrarEvento('Carrito: Agregado', `${prod.nombre} (${fmtBs(prod.precio)})`);
+    }
+
+    $('#rgnCartBubbleBtn').on('click', () => $('#rgnCartDrawer').stop(true, true).slideToggle(180));
+    $('#rgnCartClose').on('click', () => $('#rgnCartDrawer').slideUp(180));
+
+    $(document).on('click', '.rgn-qty-btn', function() {
+      const id = Number($(this).data('id'));
+      const d = Number($(this).data('d'));
+      const idx = carrito.findIndex(x => Number(x.id) === id);
+      if (idx === -1) return;
+      carrito[idx].qty += d;
+      if (carrito[idx].qty <= 0) carrito.splice(idx, 1);
+      saveCart();
+      renderCart();
+    });
+
+    $('#rgnCartClear').on('click', () => {
+      carrito = [];
+      saveCart();
+      renderCart();
+    });
+
+    $(document).on('click', '.btn-pedido-producto', function() {
+      const prod = productosData.find(p => Number(p.id) === Number($(this).data('id')));
+      if (prod) addToCart(prod);
+    });
+
+    $('#rgnCartCheckout').on('click', async function() {
+      if (!carrito.length) return alert('Agrega al menos un producto al carrito.');
       if (!currentUser) { alert('Debes registrarte o iniciar sesión para realizar pedidos.'); abrirAuth('registro'); return; }
       const customer = prompt('Nombre para el pedido', currentProfile?.full_name || ''); if (!customer) return;
       const phone = prompt('Teléfono de contacto'); if (!phone) return;
       const address = prompt('Dirección de entrega'); if (!address) return;
-      const qty = Number(prompt('Cantidad (1-50)', '1')); if (!Number.isInteger(qty) || qty < 1 || qty > 50) return alert('Cantidad inválida.');
       const notes = prompt('Notas opcionales', '') || '';
       const codigo = 'RGN-' + Date.now().toString(36).toUpperCase().slice(-6);
-      const { error } = await supabaseClient.from('orders').insert({ user_id: currentUser.id, code: codigo, product_id: prod.id, product_name: prod.nombre, unit_price: prod.precio, quantity: qty, customer_name: customer.trim(), phone: phone.trim(), address: address.trim(), notes });
-      if (error) alert('Pedido fallido: ' + error.message); else alert('Pedido guardado. Código: ' + codigo + '. El administrador lo revisará.');
+      const totalBs = $('#rgnCartDrawer').data('totalBs') || 0;
+
+      if (supabaseClient) {
+        const rows = carrito.map(item => ({
+          user_id: currentUser.id,
+          code: codigo,
+          product_id: item.id,
+          product_name: item.nombre,
+          unit_price: item.precio,
+          quantity: item.qty,
+          customer_name: customer.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          notes
+        }));
+        const { error } = await supabaseClient.from('orders').insert(rows);
+        if (error) return alert('Pedido fallido: ' + error.message);
+      }
+
+      registrarEvento('Pedido Confirmado', `Código ${codigo} · Total ${fmtBs(totalBs)}`);
+      alert(`¡Pedido confirmado!\nCódigo: ${codigo}\nTotal: ${fmtBs(totalBs)}\nEl administrador lo revisará.`);
+      carrito = [];
+      saveCart();
+      renderCart();
+      $('#rgnCartDrawer').slideUp(180);
     });
+
+    renderCart();
 
     $('#btnRefreshAdminData').on('click', function() {
       if (currentProfile?.role === 'admin') {
